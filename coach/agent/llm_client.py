@@ -166,8 +166,8 @@ class LLMClient:
     ---------------------
     Keys are arranged in a **circular queue** natively inside Upstash Redis.
     On a quota/rate-limit error, the client commands Redis to advance the queue
-    by moving the current key to the back (LPOP + RPUSH) ensuring atomic,
-    global rotation.
+    by moving the current key to the back (LPOP + RPUSH), providing
+    coordinated global rotation via Redis.
     If every key in one full cycle fails, a ``RuntimeError`` is raised.
     """
 
