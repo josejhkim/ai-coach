@@ -298,7 +298,6 @@ class LLMClient:
         n = len(self._redis_queue) if self._redis_queue is not None else len(self._keys)
         if n == 0:
              raise RuntimeError("No Gemini API keys available.")
-             
         last_exc: Exception | None = None
 
         for attempt in range(n):
