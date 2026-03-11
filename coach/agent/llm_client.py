@@ -116,11 +116,12 @@ class _RedisKeyQueue:
         Implementation: LPOP head, RPUSH it to the tail, then LINDEX 0.
         """
         try:
-            popped = self._redis.lpop(self._list_key)
-            if popped is None:
+            # Atomically move the head of the list to the tail.
+            # This prevents key loss if the process fails mid-operation.
+            moved = self._redis.lmove(self._list_key, self._list_key, "LEFT", "RIGHT")
+            if moved is None:
                 logger.warning("Redis key list %r is empty; cannot rotate Gemini API key.", self._list_key)
                 return None
-            self._redis.rpush(self._list_key, popped)
             new_head = self._redis.lindex(self._list_key, 0)
         except Exception as exc:  # noqa: BLE001
             logger.warning("Failed to rotate Gemini key in Redis: %s", exc)
