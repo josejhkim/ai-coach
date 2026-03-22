@@ -206,6 +206,8 @@ class MatchupParams(BaseModel):
             "baseA_rcv_win": f"{self.player_a.base_rcv_win:.6f}",
             "baseB_srv_win": f"{self.player_b.base_srv_win:.6f}",
             "baseB_rcv_win": f"{self.player_b.base_rcv_win:.6f}",
+            "unforced_error_A": f"{self.player_a.unforced_error_rate:.6f}",
+            "unforced_error_B": f"{self.player_b.unforced_error_rate:.6f}",
             "ue_rate_A": f"{self.player_a.unforced_error_rate:.6f}",
             "ue_rate_B": f"{self.player_b.unforced_error_rate:.6f}",
             "return_pressure_A": f"{self.player_a.return_pressure:.6f}",

@@ -9,27 +9,51 @@ from typing import Any
 _PARAM_PATTERN = re.compile(
     r"\b(pA_srv_win|pA_rcv_win|serve_mix_A_short|serve_mix_B_short|"
     r"rally_style_A_attack|rally_style_B_attack|rally_style_A_safe|rally_style_B_safe|"
-    r"ue_rate_A|ue_rate_B|return_pressure_A|return_pressure_B|clutch_A|clutch_B)\b"
+    r"unforced_error_A|unforced_error_B|ue_rate_A|ue_rate_B|"
+    r"return_pressure_A|return_pressure_B|clutch_A|clutch_B)\b"
     r"\s*[:=]\s*([+-]?(?:\d*\.\d+|\d+))",
     flags=re.IGNORECASE,
 )
+
+_PARAM_ALIASES = {
+    "ue_rate_a": "unforced_error_A",
+    "ue_rate_b": "unforced_error_B",
+}
 
 
 def _logistic(value: float) -> float:
     return 1.0 / (1.0 + math.exp(-value))
 
 
+def _get_param(params: dict[str, Any], key: str, *, legacy_key: str | None = None, default: float) -> float:
+    if key in params:
+        return float(params[key])
+    if legacy_key is not None and legacy_key in params:
+        return float(params[legacy_key])
+    return default
+
+
 def mock_probability(params: dict[str, Any]) -> float:
     """Deterministic monotonic mapping from rally params to match win probability."""
 
-    p_a_srv = float(params.get("pA_srv_win", 0.5))
-    p_a_rcv = float(params.get("pA_rcv_win", 0.5))
-    serve_edge = float(params.get("serve_mix_A_short", 0.5)) - float(params.get("serve_mix_B_short", 0.5))
-    attack_edge = float(params.get("rally_style_A_attack", 0.33)) - float(params.get("rally_style_B_attack", 0.33))
-    safe_edge = float(params.get("rally_style_B_safe", 0.33)) - float(params.get("rally_style_A_safe", 0.33))
-    ue_edge = float(params.get("ue_rate_B", 0.18)) - float(params.get("ue_rate_A", 0.18))
-    return_edge = float(params.get("return_pressure_A", 0.5)) - float(params.get("return_pressure_B", 0.5))
-    clutch_edge = float(params.get("clutch_A", 0.5)) - float(params.get("clutch_B", 0.5))
+    p_a_srv = _get_param(params, "pA_srv_win", default=0.5)
+    p_a_rcv = _get_param(params, "pA_rcv_win", default=0.5)
+    serve_edge = _get_param(params, "serve_mix_A_short", default=0.5) - _get_param(
+        params, "serve_mix_B_short", default=0.5
+    )
+    attack_edge = _get_param(params, "rally_style_A_attack", default=0.33) - _get_param(
+        params, "rally_style_B_attack", default=0.33
+    )
+    safe_edge = _get_param(params, "rally_style_B_safe", default=0.33) - _get_param(
+        params, "rally_style_A_safe", default=0.33
+    )
+    ue_edge = _get_param(params, "unforced_error_B", legacy_key="ue_rate_B", default=0.18) - _get_param(
+        params, "unforced_error_A", legacy_key="ue_rate_A", default=0.18
+    )
+    return_edge = _get_param(params, "return_pressure_A", default=0.5) - _get_param(
+        params, "return_pressure_B", default=0.5
+    )
+    clutch_edge = _get_param(params, "clutch_A", default=0.5) - _get_param(params, "clutch_B", default=0.5)
 
     linear = (
         2.8 * (p_a_srv - 0.5)
@@ -48,8 +72,9 @@ def mock_probability(params: dict[str, Any]) -> float:
 def _extract_params_from_pcsp(pcsp_text: str) -> dict[str, float]:
     params: dict[str, float] = {}
     for match in _PARAM_PATTERN.finditer(pcsp_text):
-        key = match.group(1)
+        raw_key = match.group(1)
         value = float(match.group(2))
+        key = _PARAM_ALIASES.get(raw_key.lower(), raw_key)
         params[key] = value
     return params
 

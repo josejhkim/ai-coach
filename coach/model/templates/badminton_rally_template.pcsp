@@ -6,7 +6,7 @@
 // serve_mix_A_short={{serve_mix_A_short}}, serve_mix_B_short={{serve_mix_B_short}}
 // rally_style_A_attack={{rally_style_A_attack}}, rally_style_A_safe={{rally_style_A_safe}}
 // rally_style_B_attack={{rally_style_B_attack}}, rally_style_B_safe={{rally_style_B_safe}}
-// ue_rate_A={{ue_rate_A}}, ue_rate_B={{ue_rate_B}}
+// unforced_error_A={{unforced_error_A}}, unforced_error_B={{unforced_error_B}}
 // return_pressure_A={{return_pressure_A}}, return_pressure_B={{return_pressure_B}}
 // clutch_A={{clutch_A}}, clutch_B={{clutch_B}}
 // Weights: w_short={{w_short}}, w_attack={{w_attack}}, w_safe={{w_safe}}, w_ue={{w_ue}}, w_return_pressure={{w_return_pressure}}, w_clutch={{w_clutch}}
