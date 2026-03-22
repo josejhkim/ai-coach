@@ -164,9 +164,8 @@ class LocalCSVAdapter:
         points_for: float | pd.Series,
         points_against: float | pd.Series,
     ) -> float | pd.Series:
-        total = (points_for + points_against).clip(lower=1.0) if isinstance(points_for, pd.Series) else max(
-            points_for + points_against, 1.0
-        )
+        total = points_for + points_against
+        total = total.clip(lower=1.0) if isinstance(total, pd.Series) else max(total, 1.0)
         point_loss = points_against / total
         proxy = (
             0.08

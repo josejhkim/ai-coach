@@ -387,7 +387,7 @@ class BadmintonCoachService:
             )
             l1 = adjusted.l1_change_from(baseline)
             if l1 <= l1_bound + 1e-9:
-                payload["l1"] = l1
+                payload["l1_change"] = l1
                 candidates.append(payload)
                 seen.add(key)
 
@@ -403,7 +403,7 @@ class BadmintonCoachService:
         def _magnitude(candidate: dict[str, float]) -> float:
             return sum(abs(candidate[k]) for k in ordered_knobs)
 
-        candidates.sort(key=lambda c: (c["l1"], _magnitude(c)))
+        candidates.sort(key=lambda c: (c["l1_change"], _magnitude(c)))
         return candidates
 
     def _write_prediction_artifacts(self, result: PredictionResult, window: int, as_of_date: str | None) -> None:

@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from coach.pat.mock_pat import mock_probability
 from coach.pat.parser import parse_probability, read_pat_output
 from coach.pat.runner import run_pat
 
@@ -126,3 +127,66 @@ def test_run_pat_mock_accepts_legacy_ue_rate_aliases(tmp_path: Path) -> None:
     )
 
     assert current["probability"] == legacy["probability"]
+
+
+def test_run_pat_mock_accepts_case_insensitive_param_names(tmp_path: Path) -> None:
+    canonical_path = tmp_path / "canonical.pcsp"
+    canonical_path.write_text(
+        "// inline params for mock parser\n"
+        "pA_srv_win = 0.61\n"
+        "pA_rcv_win = 0.53\n"
+        "unforced_error_A = 0.14\n"
+        "unforced_error_B = 0.20\n"
+        "#assert M reaches X with prob;\n",
+        encoding="utf-8",
+    )
+    uppercase_path = tmp_path / "uppercase.pcsp"
+    uppercase_path.write_text(
+        "// inline params for mock parser\n"
+        "PA_SRV_WIN = 0.61\n"
+        "PA_RCV_WIN = 0.53\n"
+        "UNFORCED_ERROR_A = 0.14\n"
+        "UNFORCED_ERROR_B = 0.20\n"
+        "#assert M reaches X with prob;\n",
+        encoding="utf-8",
+    )
+
+    canonical = run_pat(
+        pcsp_path=canonical_path,
+        out_path=tmp_path / "canonical_out.txt",
+        mode="mock",
+        pat_console_path=None,
+        timeout_s=30,
+        use_mono=None,
+    )
+    uppercase = run_pat(
+        pcsp_path=uppercase_path,
+        out_path=tmp_path / "uppercase_out.txt",
+        mode="mock",
+        pat_console_path=None,
+        timeout_s=30,
+        use_mono=None,
+    )
+
+    assert canonical["probability"] == uppercase["probability"]
+
+
+def test_mock_probability_normalizes_mixed_case_param_dicts() -> None:
+    canonical = mock_probability(
+        {
+            "pA_srv_win": 0.61,
+            "pA_rcv_win": 0.53,
+            "unforced_error_A": 0.14,
+            "unforced_error_B": 0.20,
+        }
+    )
+    mixed_case = mock_probability(
+        {
+            "PA_SRV_WIN": 0.61,
+            "Pa_RcV_WiN": 0.53,
+            "UNFORCED_ERROR_A": 0.14,
+            "ue_rate_b": 0.20,
+        }
+    )
+
+    assert canonical == mixed_case

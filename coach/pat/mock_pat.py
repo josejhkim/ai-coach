@@ -6,6 +6,30 @@ from pathlib import Path
 from typing import Any
 
 
+_CANONICAL_PARAM_KEYS = (
+    "pA_srv_win",
+    "pA_rcv_win",
+    "serve_mix_A_short",
+    "serve_mix_B_short",
+    "rally_style_A_attack",
+    "rally_style_B_attack",
+    "rally_style_A_safe",
+    "rally_style_B_safe",
+    "unforced_error_A",
+    "unforced_error_B",
+    "return_pressure_A",
+    "return_pressure_B",
+    "clutch_A",
+    "clutch_B",
+)
+
+_PARAM_KEY_LOOKUP = {key.lower(): key for key in _CANONICAL_PARAM_KEYS}
+_LEGACY_PARAM_ALIASES = {
+    "ue_rate_a": "unforced_error_A",
+    "ue_rate_b": "unforced_error_B",
+}
+_PARAM_KEY_LOOKUP.update(_LEGACY_PARAM_ALIASES)
+
 _PARAM_PATTERN = re.compile(
     r"\b(pA_srv_win|pA_rcv_win|serve_mix_A_short|serve_mix_B_short|"
     r"rally_style_A_attack|rally_style_B_attack|rally_style_A_safe|rally_style_B_safe|"
@@ -15,14 +39,24 @@ _PARAM_PATTERN = re.compile(
     flags=re.IGNORECASE,
 )
 
-_PARAM_ALIASES = {
-    "ue_rate_a": "unforced_error_A",
-    "ue_rate_b": "unforced_error_B",
-}
-
 
 def _logistic(value: float) -> float:
     return 1.0 / (1.0 + math.exp(-value))
+
+
+def _normalize_param_key(key: str) -> str:
+    return _PARAM_KEY_LOOKUP.get(key.lower(), key)
+
+
+def _normalize_params(params: dict[str, Any]) -> dict[str, Any]:
+    normalized: dict[str, Any] = {}
+    for raw_key, value in params.items():
+        key = _normalize_param_key(str(raw_key))
+        if str(raw_key).lower() in _LEGACY_PARAM_ALIASES:
+            normalized.setdefault(key, value)
+            continue
+        normalized[key] = value
+    return normalized
 
 
 def _get_param(params: dict[str, Any], key: str, *, legacy_key: str | None = None, default: float) -> float:
@@ -35,6 +69,8 @@ def _get_param(params: dict[str, Any], key: str, *, legacy_key: str | None = Non
 
 def mock_probability(params: dict[str, Any]) -> float:
     """Deterministic monotonic mapping from rally params to match win probability."""
+
+    params = _normalize_params(params)
 
     p_a_srv = _get_param(params, "pA_srv_win", default=0.5)
     p_a_rcv = _get_param(params, "pA_rcv_win", default=0.5)
@@ -74,7 +110,7 @@ def _extract_params_from_pcsp(pcsp_text: str) -> dict[str, float]:
     for match in _PARAM_PATTERN.finditer(pcsp_text):
         raw_key = match.group(1)
         value = float(match.group(2))
-        key = _PARAM_ALIASES.get(raw_key.lower(), raw_key)
+        key = _normalize_param_key(raw_key)
         params[key] = value
     return params
 
