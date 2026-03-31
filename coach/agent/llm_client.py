@@ -176,6 +176,10 @@ class LLMClient:
     ) -> None:
         self.model = model
         self._redis_queue: _RedisKeyQueue | None = None
+        # When rotating keys we normally rebuild the SDK client so requests use
+        # the newly active API key. Offline test harnesses that construct
+        # partially initialized instances via __new__ can leave this unset.
+        self._rebuild_client_on_advance = True
 
         # If an explicit api_key is given, use it directly.
         if api_key:
@@ -267,20 +271,24 @@ class LLMClient:
 
     def _advance(self) -> None:
         """Advance to the next key and rebuild the client."""
+        should_rebuild_client = bool(getattr(self, "_rebuild_client_on_advance", False))
         # When Redis is configured, rotate the global list instead of a local index.
-        if self._redis_queue is not None:
-            new_key = self._redis_queue.rotate()
+        redis_queue = getattr(self, "_redis_queue", None)
+        if redis_queue is not None:
+            new_key = redis_queue.rotate()
             if not new_key:
                 raise RuntimeError("Redis-backed Gemini key queue is empty; cannot rotate API key.")
             self._keys = [new_key]
             self._index = 0
-            self.client = self._make_client()
+            if should_rebuild_client:
+                self.client = self._make_client()
             logger.warning("Gemini quota hit — rotated to next key from Redis list.")
             return
 
         # Fallback: local circular list with no persistence.
         self._index = (self._index + 1) % len(self._keys)
-        self.client = self._make_client()
+        if should_rebuild_client:
+            self.client = self._make_client()
         logger.warning(
             "Gemini quota hit — rotated to key #%d of %d (index %d).",
             self._index + 1,
@@ -295,9 +303,10 @@ class LLMClient:
         Tries each key at most once per call.  Raises ``RuntimeError`` if
         the entire pool is exhausted.
         """
-        n = len(self._redis_queue) if self._redis_queue is not None else len(self._keys)
+        redis_queue = getattr(self, "_redis_queue", None)
+        n = len(redis_queue) if redis_queue is not None else len(self._keys)
         if n == 0:
-             raise RuntimeError("No Gemini API keys available.")
+            raise RuntimeError("No Gemini API keys available.")
         last_exc: Exception | None = None
 
         for attempt in range(n):
