@@ -100,32 +100,34 @@ def process_set_csv(set_path: Path) -> dict:
             "short_serve_samples": 0, "short_serve_wins": 0,
             "long_serve_samples": 0, "long_serve_wins": 0,
             "attack": 0, "neutral": 0, "safe": 0,
-            "backhand_true": 0, "backhand_total": 0,
-            "aroundhead_true": 0, "aroundhead_total": 0,
-            "lost_rallies": 0, "net_error_lost": 0, "out_error_lost": 0,
+            "strokes": 0,
+            "backhand_true": 0,
+            "aroundhead_true": 0,
+            "lost_rallies": 0,
+            "net_error_lost": 0,
+            "out_error_lost": 0,
         }
         for side in ("A", "B")
     }
     total_points = {"A": 0, "B": 0}
-    rally_count = 0
-    rally_len_sum = 0.0
-    long_rally_count = 0
+    rally_context = {
+        "rally_count": 0,
+        "rally_len_total": 0,
+        "long_rally_count": 0,
+    }
 
     for rally_id, rally_df in df.groupby("rally"):
         rally_df = rally_df.sort_values("ball_round")
-        serve_kind: str | None = None
-
-        rally_len_raw = pd.to_numeric(rally_df["ball_round"], errors="coerce").max()
-        if pd.notna(rally_len_raw):
-            rally_len = float(rally_len_raw)
-            rally_count += 1
-            rally_len_sum += rally_len
-            if rally_len >= LONG_RALLY_THRESHOLD:
-                long_rally_count += 1
+        rally_len = int(rally_df["ball_round"].max())
+        rally_context["rally_count"] += 1
+        rally_context["rally_len_total"] += rally_len
+        if rally_len >= LONG_RALLY_THRESHOLD:
+            rally_context["long_rally_count"] += 1
 
         # Identify server from first stroke
         first = rally_df.iloc[0]
         english_type = translate_type(str(first["type"]))
+        serve_kind: str | None = None
 
         if english_type not in SERVE_TYPES:
             # Malformed rally — skip serve counting but still count rally shots
@@ -156,24 +158,25 @@ def process_set_csv(set_path: Path) -> dict:
                 elif serve_kind == "long":
                     counts[server]["long_serve_wins"] += 1
 
-            loser = "B" if winner == "A" else "A"
-            counts[loser]["lost_rallies"] += 1
-            lose_reason = terminal.get("lose_reason")
-            if pd.notna(lose_reason):
-                reason_text = str(lose_reason)
-                if reason_text in NET_ERROR_REASONS:
+            if winner in {"A", "B"}:
+                loser = "B" if winner == "A" else "A"
+                counts[loser]["lost_rallies"] += 1
+                lose_reason_raw = terminal["lose_reason"]
+                lose_reason = str(lose_reason_raw) if pd.notna(lose_reason_raw) else ""
+                if lose_reason in NET_ERROR_REASONS:
                     counts[loser]["net_error_lost"] += 1
-                if reason_text in OUT_ERROR_REASONS:
+                if lose_reason in OUT_ERROR_REASONS:
                     counts[loser]["out_error_lost"] += 1
 
         # Classify all non-serve strokes into attack/neutral/safe
         for _, row in rally_df.iterrows():
             side = str(row["player"])
+            if side not in counts:
+                continue
 
-            counts[side]["backhand_total"] += 1
+            counts[side]["strokes"] += 1
             if pd.notna(row.get("backhand")) and float(row["backhand"]) == 1.0:
                 counts[side]["backhand_true"] += 1
-            counts[side]["aroundhead_total"] += 1
             if pd.notna(row.get("aroundhead")) and float(row["aroundhead"]) == 1.0:
                 counts[side]["aroundhead_true"] += 1
 
@@ -193,10 +196,11 @@ def process_set_csv(set_path: Path) -> dict:
         "score_a": score_a,
         "score_b": score_b,
         "rallies": {
-            "count": rally_count,
-            "len_sum": rally_len_sum,
-            "long_count": long_rally_count,
+            "count": int(rally_context["rally_count"]),
+            "len_sum": float(rally_context["rally_len_total"]),
+            "long_count": int(rally_context["long_rally_count"]),
         },
+        "rally_context": rally_context,
     }
 
 
@@ -210,17 +214,22 @@ def process_match(match_folder: Path, num_sets: int) -> dict:
             "short_serve_samples": 0, "short_serve_wins": 0,
             "long_serve_samples": 0, "long_serve_wins": 0,
             "attack": 0, "neutral": 0, "safe": 0,
-            "backhand_true": 0, "backhand_total": 0,
-            "aroundhead_true": 0, "aroundhead_total": 0,
-            "lost_rallies": 0, "net_error_lost": 0, "out_error_lost": 0,
+            "strokes": 0,
+            "backhand_true": 0,
+            "aroundhead_true": 0,
+            "lost_rallies": 0,
+            "net_error_lost": 0,
+            "out_error_lost": 0,
         }
         for side in ("A", "B")
     }
     total_points = {"A": 0, "B": 0}
     games_won = {"A": 0, "B": 0}
-    rally_count = 0
-    rally_len_sum = 0.0
-    long_rally_count = 0
+    rally_context = {
+        "rally_count": 0,
+        "rally_len_total": 0,
+        "long_rally_count": 0,
+    }
 
     for set_num in range(1, num_sets + 1):
         set_path = match_folder / f"set{set_num}.csv"
@@ -233,9 +242,8 @@ def process_match(match_folder: Path, num_sets: int) -> dict:
             for key in agg[side]:
                 agg[side][key] += result["counts"][side][key]
             total_points[side] += result["total_points"][side]
-        rally_count += int(result["rallies"]["count"])
-        rally_len_sum += float(result["rallies"]["len_sum"])
-        long_rally_count += int(result["rallies"]["long_count"])
+        for key in rally_context:
+            rally_context[key] += result["rally_context"][key]
 
         if result["score_a"] > result["score_b"]:
             games_won["A"] += 1
@@ -247,10 +255,11 @@ def process_match(match_folder: Path, num_sets: int) -> dict:
         "total_points": total_points,
         "games_won": games_won,
         "rallies": {
-            "count": rally_count,
-            "len_sum": rally_len_sum,
-            "long_count": long_rally_count,
+            "count": int(rally_context["rally_count"]),
+            "len_sum": float(rally_context["rally_len_total"]),
+            "long_count": int(rally_context["long_rally_count"]),
         },
+        "rally_context": rally_context,
     }
 
 
@@ -286,14 +295,13 @@ def compute_rates(counts: dict) -> dict:
 
 def compute_enriched_rates(counts: dict) -> dict:
     """Compute extended tactical/context rates with deterministic defaults."""
-    backhand_total = int(counts["backhand_total"])
-    aroundhead_total = int(counts["aroundhead_total"])
+    strokes = int(counts["strokes"])
     lost_rallies = int(counts["lost_rallies"])
     short_samples = int(counts["short_serve_samples"])
     long_samples = int(counts["long_serve_samples"])
 
-    backhand_rate = (counts["backhand_true"] / backhand_total) if backhand_total > 0 else 0.0
-    aroundhead_rate = (counts["aroundhead_true"] / aroundhead_total) if aroundhead_total > 0 else 0.0
+    backhand_rate = (counts["backhand_true"] / strokes) if strokes > 0 else 0.0
+    aroundhead_rate = (counts["aroundhead_true"] / strokes) if strokes > 0 else 0.0
     net_error_lost_rate = (counts["net_error_lost"] / lost_rallies) if lost_rallies > 0 else 0.0
     out_error_lost_rate = (counts["out_error_lost"] / lost_rallies) if lost_rallies > 0 else 0.0
     short_serve_win_rate = (counts["short_serve_wins"] / short_samples) if short_samples > 0 else 0.5
@@ -397,10 +405,10 @@ def build_data(set_dir: Path) -> tuple[pd.DataFrame, pd.DataFrame]:
         pb_rates = compute_rates(pb_counts)
         pa_enriched = compute_enriched_rates(pa_counts)
         pb_enriched = compute_enriched_rates(pb_counts)
-        total_rallies = int(result["rallies"]["count"])
+        total_rallies = int(result["rally_context"]["rally_count"])
         if total_rallies > 0:
-            avg_rally_len = round(float(result["rallies"]["len_sum"] / total_rallies), 4)
-            long_rally_share = round(float(result["rallies"]["long_count"] / total_rallies), 4)
+            avg_rally_len = round(float(result["rally_context"]["rally_len_total"] / total_rallies), 4)
+            long_rally_share = round(float(result["rally_context"]["long_rally_count"] / total_rallies), 4)
         else:
             avg_rally_len = 0.0
             long_rally_share = 0.0
@@ -541,8 +549,10 @@ def validate(players_df: pd.DataFrame, matches_df: pd.DataFrame) -> None:
                 errors.append(f"Row {idx}: {col}={row[col]} out of [0, 1]")
 
         sample_cols = [
-            "a_short_serve_samples", "b_short_serve_samples",
-            "a_long_serve_samples", "b_long_serve_samples",
+            "a_short_serve_samples",
+            "b_short_serve_samples",
+            "a_long_serve_samples",
+            "b_long_serve_samples",
         ]
         for col in sample_cols:
             value = float(row[col])
@@ -559,8 +569,8 @@ def validate(players_df: pd.DataFrame, matches_df: pd.DataFrame) -> None:
 
         if int(row["match_sets"]) < 1:
             errors.append(f"Row {idx}: match_sets must be >= 1")
-        if int(row["duration_min"]) < 0:
-            errors.append(f"Row {idx}: duration_min must be >= 0")
+        if int(row["duration_min"]) <= 0:
+            errors.append(f"Row {idx}: duration_min must be > 0")
 
     if errors:
         for e in errors:
