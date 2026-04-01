@@ -50,16 +50,21 @@ def _render_home() -> str:
         <title>AI Badminton Coach</title>
         <style>
           :root {{
-            --bg: #f6f1e8;
-            --panel: rgba(255, 250, 242, 0.84);
-            --panel-strong: #fffaf2;
-            --ink: #1c2430;
-            --muted: #5e6773;
-            --line: rgba(28, 36, 48, 0.12);
-            --accent: #0d7a5f;
-            --accent-2: #e36b2c;
-            --accent-3: #1e5aa8;
-            --shadow: 0 22px 60px rgba(28, 36, 48, 0.12);
+            --bg: #0c1b17;
+            --bg-soft: #132822;
+            --panel: rgba(15, 35, 30, 0.92);
+            --panel-strong: rgba(20, 44, 38, 0.96);
+            --ink: #eef7f2;
+            --muted: #9bb7ad;
+            --line: rgba(213, 243, 229, 0.14);
+            --court: #1d6a47;
+            --court-deep: #0f4f33;
+            --court-line: rgba(233, 247, 240, 0.84);
+            --accent: #ffb000;
+            --accent-2: #35d08d;
+            --accent-3: #77d7ff;
+            --danger: #ff7b5c;
+            --shadow: 0 28px 70px rgba(0, 0, 0, 0.34);
           }}
 
           * {{
@@ -68,12 +73,12 @@ def _render_home() -> str:
 
           body {{
             margin: 0;
-            font-family: Georgia, "Times New Roman", serif;
+            font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
             color: var(--ink);
             background:
-              radial-gradient(circle at top left, rgba(227, 107, 44, 0.18), transparent 32%),
-              radial-gradient(circle at top right, rgba(13, 122, 95, 0.17), transparent 28%),
-              linear-gradient(180deg, #fcfaf6 0%, var(--bg) 100%);
+              radial-gradient(circle at top left, rgba(53, 208, 141, 0.12), transparent 22%),
+              radial-gradient(circle at top right, rgba(119, 215, 255, 0.1), transparent 24%),
+              linear-gradient(180deg, #10231d 0%, var(--bg) 100%);
           }}
 
           .shell {{
@@ -84,68 +89,103 @@ def _render_home() -> str:
           .hero {{
             position: relative;
             overflow: hidden;
-            padding: 32px;
+            padding: 34px;
             border: 1px solid var(--line);
             border-radius: 28px;
             background:
-              linear-gradient(135deg, rgba(255, 255, 255, 0.85), rgba(245, 237, 224, 0.95)),
-              linear-gradient(160deg, rgba(13, 122, 95, 0.1), rgba(30, 90, 168, 0.04));
+              linear-gradient(145deg, rgba(14, 47, 38, 0.98), rgba(10, 27, 23, 0.98));
             box-shadow: var(--shadow);
           }}
-
+          
           .hero::after {{
-            content: "";
-            position: absolute;
-            inset: auto -40px -70px auto;
-            width: 220px;
-            height: 220px;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(13, 122, 95, 0.18), transparent 68%);
+              content: "";
+              position: absolute;
+              right: 34px;
+              top: 26px;
+              width: 150px;
+              height: 240px;
+              border-radius: 0;
+              background:
+                url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='240' viewBox='0 0 150 240'%3E%3C!-- Court surface --%3E%3Crect width='150' height='240' fill='%231a5c32' fill-opacity='0.55'/%3E%3C!-- Outer border --%3E%3Crect x='1' y='1' width='148' height='238' fill='none' stroke='rgba(255,255,255,0.85)' stroke-width='2'/%3E%3C!-- Horizontal lines --%3E%3Cline x1='1' y1='13.7' x2='149' y2='13.7' stroke='rgba(255,255,255,0.85)' stroke-width='1.5'/%3E%3Cline x1='1' y1='84' x2='149' y2='84' stroke='rgba(255,255,255,0.85)' stroke-width='1.5'/%3E%3Cline x1='1' y1='120' x2='149' y2='120' stroke='rgba(255,255,255,0.85)' stroke-width='2.5'/%3E%3Cline x1='1' y1='156' x2='149' y2='156' stroke='rgba(255,255,255,0.85)' stroke-width='1.5'/%3E%3Cline x1='1' y1='226.3' x2='149' y2='226.3' stroke='rgba(255,255,255,0.85)' stroke-width='1.5'/%3E%3C!-- Vertical center line --%3E%3Cline x1='75' y1='84' x2='75' y2='156' stroke='rgba(255,255,255,0.85)' stroke-width='1.5'/%3E%3C!-- X data points --%3E%3Ctext x='30' y='50' font-size='14' font-weight='bold' fill='%23ff4d6d' text-anchor='middle' dominant-baseline='middle'%3EX%3C/text%3E%3Ctext x='110' y='40' font-size='14' font-weight='bold' fill='%2300cfff' text-anchor='middle' dominant-baseline='middle'%3EX%3C/text%3E%3Ctext x='70' y='68' font-size='12' font-weight='bold' fill='%23ffd60a' text-anchor='middle' dominant-baseline='middle'%3EX%3C/text%3E%3Ctext x='45' y='105' font-size='13' font-weight='bold' fill='%2300cfff' text-anchor='middle' dominant-baseline='middle'%3EX%3C/text%3E%3Ctext x='112' y='98' font-size='12' font-weight='bold' fill='%23ff4d6d' text-anchor='middle' dominant-baseline='middle'%3EX%3C/text%3E%3Ctext x='88' y='140' font-size='14' font-weight='bold' fill='%23ffd60a' text-anchor='middle' dominant-baseline='middle'%3EX%3C/text%3E%3Ctext x='35' y='172' font-size='12' font-weight='bold' fill='%23a8ff78' text-anchor='middle' dominant-baseline='middle'%3EX%3C/text%3E%3Ctext x='105' y='165' font-size='13' font-weight='bold' fill='%23ff4d6d' text-anchor='middle' dominant-baseline='middle'%3EX%3C/text%3E%3Ctext x='60' y='195' font-size='14' font-weight='bold' fill='%2300cfff' text-anchor='middle' dominant-baseline='middle'%3EX%3C/text%3E%3Ctext x='118' y='210' font-size='12' font-weight='bold' fill='%23a8ff78' text-anchor='middle' dominant-baseline='middle'%3EX%3C/text%3E%3C/svg%3E");
+              background-size: cover;
+              border: none;
           }}
 
           .eyebrow {{
             display: inline-flex;
             padding: 8px 12px;
             border-radius: 999px;
-            background: rgba(13, 122, 95, 0.1);
-            color: var(--accent);
+            background: rgba(255, 176, 0, 0.12);
+            color: #ffd15a;
             font-size: 12px;
             letter-spacing: 0.14em;
             text-transform: uppercase;
+            border: 1px solid rgba(255, 176, 0, 0.18);
           }}
 
           h1 {{
             margin: 14px 0 12px;
             font-size: clamp(2.4rem, 5vw, 4.3rem);
-            line-height: 0.95;
+            line-height: 0.94;
+            max-width: 760px;
+            color: white;
+            letter-spacing: -0.04em;
           }}
 
-          .hero p {{
-            max-width: 760px;
-            margin: 0;
-            font-size: 1.05rem;
-            line-height: 1.6;
-            color: var(--muted);
+          # .hero p {{
+          #   max-width: 660px;
+          #   margin: 0;
+          #   font-size: 1.05rem;
+          #   line-height: 1.6;
+          #   color: rgba(238, 247, 242, 0.78);
+          # }}
+
+          # .hero-copy {{
+          #   position: relative;
+          #   z-index: 1;
+          # }}
+
+          .hero-meta {{
+            display: inline-flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 18px;
+          }}
+
+          .chip {{
+            padding: 8px 12px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.06);
+            color: rgba(255, 255, 255, 0.88);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.9rem;
           }}
 
           .stats {{
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
             gap: 14px;
-            margin-top: 24px;
+            margin-top: 112px;
+            position: relative;
+            z-index: 1;
           }}
 
           .stat {{
-            padding: 16px;
-            border-radius: 18px;
+            padding: 18px;
+            border-radius: 20px;
             border: 1px solid var(--line);
-            background: rgba(255, 255, 255, 0.7);
+            background: rgba(255, 255, 255, 0.045);
+            color: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
           }}
 
           .stat strong {{
             display: block;
-            font-size: 1.4rem;
+            font-size: 1rem;
             margin-bottom: 6px;
+            color: #ffd15a;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
           }}
 
           .layout {{
@@ -161,6 +201,18 @@ def _render_home() -> str:
             background: var(--panel);
             box-shadow: var(--shadow);
             backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+          }}
+
+          .panel::after {{
+            content: "";
+            position: absolute;
+            inset: auto -50px -50px auto;
+            width: 130px;
+            height: 130px;
+            background: radial-gradient(circle, rgba(53, 208, 141, 0.12), transparent 70%);
+            pointer-events: none;
           }}
 
           .panel-head {{
@@ -174,6 +226,9 @@ def _render_home() -> str:
           .panel-head h2,
           .panel-head h3 {{
             margin: 0;
+            font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+            font-weight: 700;
+            letter-spacing: -0.03em;
           }}
 
           .panel-body {{
@@ -203,11 +258,17 @@ def _render_home() -> str:
           }}
 
           input, select, textarea {{
-            border: 1px solid rgba(28, 36, 48, 0.12);
+            border: 1px solid rgba(213, 243, 229, 0.12);
             border-radius: 14px;
-            background: rgba(255, 255, 255, 0.86);
+            background: rgba(255, 255, 255, 0.05);
             padding: 12px 14px;
             color: var(--ink);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+          }}
+
+          input::placeholder,
+          textarea::placeholder {{
+            color: #8ea79e;
           }}
 
           textarea {{
@@ -234,17 +295,19 @@ def _render_home() -> str:
           }}
 
           .primary {{
-            background: linear-gradient(135deg, var(--accent), #18a17c);
-            color: white;
+            background: linear-gradient(135deg, #f7a400, var(--accent));
+            color: #18261f;
+            font-weight: 700;
           }}
 
           .secondary {{
-            background: linear-gradient(135deg, var(--accent-2), #ef8e57);
+            background: linear-gradient(135deg, var(--accent-3), #4cc2ff);
             color: white;
+            font-weight: 700;
           }}
 
           .ghost {{
-            background: rgba(28, 36, 48, 0.06);
+            background: rgba(255, 255, 255, 0.06);
             color: var(--ink);
           }}
 
@@ -262,13 +325,13 @@ def _render_home() -> str:
           }}
 
           .bubble.user {{
-            background: rgba(30, 90, 168, 0.08);
-            border-color: rgba(30, 90, 168, 0.12);
+            background: rgba(119, 215, 255, 0.1);
+            border-color: rgba(119, 215, 255, 0.16);
           }}
 
           .bubble.system {{
-            background: rgba(13, 122, 95, 0.07);
-            border-color: rgba(13, 122, 95, 0.12);
+            background: rgba(53, 208, 141, 0.08);
+            border-color: rgba(53, 208, 141, 0.16);
           }}
 
           .muted {{
@@ -279,7 +342,17 @@ def _render_home() -> str:
             padding: 16px;
             border-radius: 18px;
             border: 1px solid var(--line);
-            background: rgba(255, 255, 255, 0.76);
+            background: rgba(255, 255, 255, 0.05);
+            position: relative;
+          }}
+
+          .result-card::before {{
+            content: "";
+            position: absolute;
+            inset: 0 auto auto 0;
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(90deg, var(--accent), var(--accent-3));
           }}
 
           .metric-row {{
@@ -292,7 +365,7 @@ def _render_home() -> str:
           .metric {{
             padding: 12px;
             border-radius: 14px;
-            background: rgba(28, 36, 48, 0.04);
+            background: rgba(255, 255, 255, 0.045);
           }}
 
           .metric strong {{
@@ -311,8 +384,91 @@ def _render_home() -> str:
             padding: 8px 12px;
             border-radius: 999px;
             border: 1px solid var(--line);
-            background: rgba(255, 255, 255, 0.78);
+            background: rgba(255, 255, 255, 0.04);
             cursor: pointer;
+            color: var(--ink);
+          }}
+
+          .side-stack {{
+            display: grid;
+            gap: 18px;
+          }}
+
+          .scoreboard {{
+            border: 1px solid var(--line);
+            border-radius: 24px;
+            background:
+              linear-gradient(180deg, rgba(10, 27, 23, 0.98), rgba(18, 42, 36, 0.98));
+            padding: 18px;
+            box-shadow: var(--shadow);
+          }}
+
+          .scoreboard strong {{
+            display: block;
+            margin-bottom: 8px;
+            color: #ffd15a;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            font-size: 0.82rem;
+          }}
+
+          .score-row {{
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 12px;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+          }}
+
+          .score-row:last-child {{
+            border-bottom: 0;
+          }}
+
+          .score-row span:last-child {{
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+          }}
+
+          .court-mini {{
+            margin-top: 12px;
+            height: 124px;
+            border-radius: 18px;
+            background:
+              linear-gradient(90deg, transparent 0 8%, var(--court-line) 8% 9%, transparent 9% 91%, var(--court-line) 91% 92%, transparent 92%),
+              linear-gradient(180deg, transparent 0 12%, var(--court-line) 12% 13%, transparent 13% 87%, var(--court-line) 87% 88%, transparent 88%),
+              linear-gradient(90deg, transparent 0 49.4%, var(--court-line) 49.4% 50.6%, transparent 50.6%),
+              linear-gradient(180deg, transparent 0 49.2%, var(--court-line) 49.2% 50.8%, transparent 50.8%),
+              linear-gradient(180deg, var(--court) 0%, var(--court-deep) 100%);
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(233, 247, 240, 0.12);
+          }}
+
+          .court-mini::before {{
+            content: "";
+            position: absolute;
+            left: 50%;
+            top: 8px;
+            bottom: 8px;
+            width: 2px;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.28);
+          }}
+
+          .court-mini::after {{
+            content: "";
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            right: 28px;
+            top: 26px;
+            background: var(--accent);
+            box-shadow:
+              -54px 24px 0 0 rgba(255, 176, 0, 0.8),
+              -108px 52px 0 0 rgba(255, 176, 0, 0.55);
           }}
 
           pre {{
@@ -337,6 +493,14 @@ def _render_home() -> str:
               padding: 18px;
             }}
 
+            .hero::after {{
+              display: none;
+            }}
+
+            .stats {{
+              margin-top: 26px;
+            }}
+
             .panel-head {{
               padding: 18px 18px 0;
             }}
@@ -350,24 +514,31 @@ def _render_home() -> str:
       <body>
         <main class="shell">
           <section class="hero">
-            <div class="eyebrow">AI Mode Frontend</div>
-            <h1>Talk to the badminton coach in your browser.</h1>
-            <p>
-              Ask natural-language questions in AI mode, run direct win predictions,
-              and explore strategy improvements without dropping back to the CLI.
-            </p>
+            <div class="hero-copy">
+              <div class="eyebrow">Badminton AI Matchroom</div>
+              <h1>Read the court, test the matchup, then coach the next point.</h1>
+              <p>
+                A cleaner matchday layout for badminton: one place to ask the coach, inspect win probability,
+                and trial tactical changes before the next rally starts.
+              </p>
+              <div class="hero-meta">
+                <span class="chip">AI coaching console</span>
+                <span class="chip">PAT-backed predictions</span>
+                <span class="chip">Strategy drill view</span>
+              </div>
+            </div>
             <div class="stats">
               <div class="stat">
-                <strong>AI chat</strong>
-                Natural-language planning backed by the existing agent executor.
+                <strong>Rally Brief</strong>
+                Ask in plain language like a player, analyst, or coach.
               </div>
               <div class="stat">
-                <strong>Prediction</strong>
-                Run PAT-based matchup probability checks with mock or real mode.
+                <strong>Win Read</strong>
+                Check the matchup before stepping onto the court.
               </div>
               <div class="stat">
-                <strong>Strategy</strong>
-                Surface the best tactical knob adjustments and quantified deltas.
+                <strong>Adjustment Lab</strong>
+                Compare tactical levers and their expected impact.
               </div>
             </div>
           </section>
@@ -376,13 +547,13 @@ def _render_home() -> str:
             <div class="panel">
               <div class="panel-head">
                 <h2>AI Coach</h2>
-                <span class="muted">Natural language</span>
+                <span class="muted">Rally briefing</span>
               </div>
               <div class="panel-body">
                 <form id="chat-form" class="grid">
                   <div class="full">
                     <label for="query">Ask the coach</label>
-                    <textarea id="query" name="query" placeholder="Example: What should Viktor Axelsen adjust to improve his chances against Kento Momota?"></textarea>
+                    <textarea id="query" name="query" placeholder="Example: Against Kento Momota, should Viktor Axelsen press the attack early or extend rallies and protect his error rate?"></textarea>
                   </div>
                   <div>
                     <label for="chat-mode">Execution mode</label>
@@ -419,17 +590,17 @@ def _render_home() -> str:
 
                 <div class="chat-output" id="chat-output" style="margin-top: 18px;">
                   <div class="bubble system">
-                    AI mode is ready. Ask for a prediction or a tactical recommendation and the frontend will call the same coach executor used by the CLI.
+                    AI mode is ready. Ask for a matchup read, a serving idea, or a tactical shift and this view will call the same coach executor used by the CLI.
                   </div>
                 </div>
               </div>
             </div>
 
-            <div style="display: grid; gap: 18px;">
+            <div class="side-stack">
               <div class="panel">
                 <div class="panel-head">
                   <h3>Direct Prediction</h3>
-                  <span class="muted">Structured API</span>
+                  <span class="muted">Match probability</span>
                 </div>
                 <div class="panel-body">
                   <form id="predict-form" class="grid">
@@ -463,7 +634,7 @@ def _render_home() -> str:
               <div class="panel">
                 <div class="panel-head">
                   <h3>Strategy Explorer</h3>
-                  <span class="muted">Sensitivity search</span>
+                  <span class="muted">Adjustment board</span>
                 </div>
                 <div class="panel-body">
                   <form id="strategy-form" class="grid">
