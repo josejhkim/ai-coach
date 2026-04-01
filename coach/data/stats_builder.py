@@ -48,84 +48,80 @@ def estimate_influence_weights(adapter: LocalCSVAdapter) -> InfluenceWeights:
             w_rally_tolerance=0.02,
             w_error_profile=0.03,
             w_handedness=0.01,
+            w_backhand=0.01,
+            w_aroundhead=0.01,
         )
 
-    x_short = df["a_short_serve_rate"] - df["b_short_serve_rate"]
-    x_attack = df["a_attack_rate"] - df["b_attack_rate"]
-    x_safe_term = -(df["b_safe_rate"] - df["a_safe_rate"])
-    total_points = (df["a_points"] + df["b_points"]).clip(lower=1.0)
-    n_rows = len(df)
+    feature_rows: list[list[float]] = []
+    targets: list[float] = []
+    stats_cache: dict[tuple[str, str], dict[str, Any] | None] = {}
 
-    def series_or_default(name: str, default: float) -> Any:
-        if name in df.columns:
-            return df[name]
-        return np.full(n_rows, default, dtype=float)
+    def get_historical_stats(player_id: str, cutoff: str) -> dict[str, Any] | None:
+        key = (player_id, cutoff)
+        if key not in stats_cache:
+            try:
+                stats_cache[key] = adapter.get_player_params(player_id=player_id, window=30, as_of_date=cutoff)
+            except ValueError:
+                stats_cache[key] = None
+        return stats_cache[key]
 
-    a_receive = (df["b_serve_rallies"] - df["b_serve_wins"]) / df["b_serve_rallies"].clip(lower=1.0)
-    b_receive = (df["a_serve_rallies"] - df["a_serve_wins"]) / df["a_serve_rallies"].clip(lower=1.0)
-    x_return_pressure = a_receive - b_receive
+    for row in df.sort_values("date").itertuples(index=False):
+        cutoff = (pd.Timestamp(row.date) - pd.Timedelta(days=1)).strftime("%Y-%m-%d")
+        a_stats = get_historical_stats(str(row.playerA_id), cutoff)
+        b_stats = get_historical_stats(str(row.playerB_id), cutoff)
+        if a_stats is None or b_stats is None:
+            continue
 
-    a_ue = (
-        0.08
-        + 0.22 * df["a_attack_rate"]
-        + 0.08 * df["a_flick_serve_rate"]
-        + 0.11 * (df["b_points"] / total_points)
-        - 0.09 * df["a_safe_rate"]
-    )
-    b_ue = (
-        0.08
-        + 0.22 * df["b_attack_rate"]
-        + 0.08 * df["b_flick_serve_rate"]
-        + 0.11 * (df["a_points"] / total_points)
-        - 0.09 * df["b_safe_rate"]
-    )
-    x_ue = b_ue - a_ue
+        total_points = max(float(row.a_points + row.b_points), 1.0)
+        feature_rows.append([
+            float(a_stats["serve_mix"]["short"]) - float(b_stats["serve_mix"]["short"]),
+            float(a_stats["rally_style"]["attack"]) - float(b_stats["rally_style"]["attack"]),
+            float(a_stats["rally_style"]["safe"]) - float(b_stats["rally_style"]["safe"]),
+            float(b_stats["unforced_error_rate"]) - float(a_stats["unforced_error_rate"]),
+            float(a_stats["return_pressure"]) - float(b_stats["return_pressure"]),
+            float(a_stats["clutch_point_win"]) - float(b_stats["clutch_point_win"]),
+            0.5 * (float(a_stats["short_serve_skill"]) - float(b_stats["short_serve_skill"]))
+            + 0.5 * (float(a_stats["long_serve_skill"]) - float(b_stats["long_serve_skill"])),
+            float(a_stats["rally_tolerance"]) - float(b_stats["rally_tolerance"]),
+            0.5
+            * (
+                (float(b_stats["net_error_rate"]) - float(a_stats["net_error_rate"]))
+                + (float(b_stats["out_error_rate"]) - float(a_stats["out_error_rate"]))
+            ),
+            float(a_stats["handedness_flag"]) - float(b_stats["handedness_flag"]),
+            float(b_stats["backhand_rate"]) - float(a_stats["backhand_rate"]),
+            float(a_stats["aroundhead_rate"]) - float(b_stats["aroundhead_rate"]),
+        ])
+        targets.append((float(row.a_points) / total_points) - 0.5)
 
-    close_factor = 1.0 - ((df["a_points"] - df["b_points"]).abs() / total_points)
-    winner_sign = np.where(df["winner_id"] == df["playerA_id"], 1.0, -1.0)
-    x_clutch = close_factor.to_numpy(dtype=float) * winner_sign
-
-    a_short_srv_skill = series_or_default("a_short_serve_win_rate", 0.5)
-    b_short_srv_skill = series_or_default("b_short_serve_win_rate", 0.5)
-    a_long_srv_skill = series_or_default("a_long_serve_win_rate", 0.5)
-    b_long_srv_skill = series_or_default("b_long_serve_win_rate", 0.5)
-    x_serve_type = 0.5 * (a_short_srv_skill - b_short_srv_skill) + 0.5 * (a_long_srv_skill - b_long_srv_skill)
-
-    a_net_err = series_or_default("a_net_error_lost_rate", 0.0)
-    b_net_err = series_or_default("b_net_error_lost_rate", 0.0)
-    a_out_err = series_or_default("a_out_error_lost_rate", 0.0)
-    b_out_err = series_or_default("b_out_error_lost_rate", 0.0)
-    x_error_profile = 0.5 * ((b_net_err - a_net_err) + (b_out_err - a_out_err))
-
-    players = adapter.players_df.copy()
-    handedness = players["handedness"] if "handedness" in players.columns else np.full(len(players), "", dtype=object)
-    players["left_flag"] = (pd.Series(handedness).fillna("").str.upper() == "L").astype(float)
-    left_map = players.set_index("player_id")["left_flag"].to_dict()
-    a_left = df["playerA_id"].map(left_map).fillna(0.0)
-    b_left = df["playerB_id"].map(left_map).fillna(0.0)
-    x_handedness = a_left - b_left
-
-    y = (df["a_points"] / total_points) - 0.5
+    if len(feature_rows) < 10:
+        return InfluenceWeights(
+            w_short=0.04,
+            w_attack=0.06,
+            w_safe=0.05,
+            w_ue=0.08,
+            w_return_pressure=0.07,
+            w_clutch=0.05,
+            w_serve_type=0.03,
+            w_rally_tolerance=0.02,
+            w_error_profile=0.03,
+            w_handedness=0.01,
+            w_backhand=0.01,
+            w_aroundhead=0.01,
+        )
 
     X = np.column_stack([
-        np.ones(len(df), dtype=float),
-        x_short.to_numpy(dtype=float),
-        x_attack.to_numpy(dtype=float),
-        x_safe_term.to_numpy(dtype=float),
-        x_ue.to_numpy(dtype=float),
-        x_return_pressure.to_numpy(dtype=float),
-        x_clutch,
-        np.asarray(x_serve_type, dtype=float),
-        np.asarray(x_error_profile, dtype=float),
-        x_handedness.to_numpy(dtype=float),
+        np.ones(len(feature_rows), dtype=float),
+        np.asarray(feature_rows, dtype=float),
     ])
+    y = np.asarray(targets, dtype=float)
 
     # Ridge regression stabilizes small-sample estimates and avoids aggressive weights.
     ridge_lambda = 2.5
     xtx = X.T @ X
     reg = np.eye(xtx.shape[0], dtype=float) * ridge_lambda
     reg[0, 0] = 0.0  # keep intercept unpenalized
-    beta = np.linalg.solve(xtx + reg, X.T @ y.to_numpy(dtype=float))
+    beta = np.linalg.solve(xtx + reg, X.T @ y)
 
     w_short = float(np.clip(abs(beta[1]), 0.01, 0.2))
     w_attack = float(np.clip(abs(beta[2]), 0.01, 0.2))
@@ -134,8 +130,11 @@ def estimate_influence_weights(adapter: LocalCSVAdapter) -> InfluenceWeights:
     w_return_pressure = float(np.clip(abs(beta[5]), 0.01, 0.2))
     w_clutch = float(np.clip(abs(beta[6]), 0.01, 0.12))
     w_serve_type = float(np.clip(abs(beta[7]), 0.0, 0.08))
-    w_error_profile = float(np.clip(abs(beta[8]), 0.0, 0.08))
-    w_handedness = float(np.clip(abs(beta[9]), 0.0, 0.08))
+    w_rally_tolerance = float(np.clip(abs(beta[8]), 0.0, 0.08))
+    w_error_profile = float(np.clip(abs(beta[9]), 0.0, 0.08))
+    w_handedness = float(np.clip(abs(beta[10]), 0.0, 0.08))
+    w_backhand = float(np.clip(abs(beta[11]), 0.0, 0.08))
+    w_aroundhead = float(np.clip(abs(beta[12]), 0.0, 0.08))
 
     return InfluenceWeights(
         w_short=w_short,
@@ -145,9 +144,11 @@ def estimate_influence_weights(adapter: LocalCSVAdapter) -> InfluenceWeights:
         w_return_pressure=w_return_pressure,
         w_clutch=w_clutch,
         w_serve_type=w_serve_type,
-        w_rally_tolerance=0.02,
+        w_rally_tolerance=w_rally_tolerance,
         w_error_profile=w_error_profile,
         w_handedness=w_handedness,
+        w_backhand=w_backhand,
+        w_aroundhead=w_aroundhead,
     )
 
 

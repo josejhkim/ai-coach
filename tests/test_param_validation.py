@@ -160,3 +160,19 @@ def test_handedness_edge_is_directional_and_bounded() -> None:
     assert a_left_vs_right.effective_probabilities()["pA_rcv_win"] >= all_right.effective_probabilities()["pA_rcv_win"]
     assert 0.01 <= a_left_vs_right.effective_probabilities()["pA_srv_win"] <= 0.99
     assert 0.01 <= a_left_vs_right.effective_probabilities()["pA_rcv_win"] <= 0.99
+
+
+def test_stroke_profile_edges_influence_probabilities() -> None:
+    baseline = MatchupParams(
+        player_a=make_player("a", "Player A").model_copy(update={"backhand_rate": 0.45, "aroundhead_rate": 0.05}),
+        player_b=make_player("b", "Player B").model_copy(update={"backhand_rate": 0.45, "aroundhead_rate": 0.05}),
+        weights=InfluenceWeights(w_short=0.04, w_attack=0.06, w_safe=0.05, w_backhand=0.08, w_aroundhead=0.08),
+    )
+    improved = MatchupParams(
+        player_a=make_player("a", "Player A").model_copy(update={"backhand_rate": 0.25, "aroundhead_rate": 0.18}),
+        player_b=make_player("b", "Player B").model_copy(update={"backhand_rate": 0.45, "aroundhead_rate": 0.05}),
+        weights=InfluenceWeights(w_short=0.04, w_attack=0.06, w_safe=0.05, w_backhand=0.08, w_aroundhead=0.08),
+    )
+
+    assert improved.effective_probabilities()["pA_srv_win"] > baseline.effective_probabilities()["pA_srv_win"]
+    assert improved.effective_probabilities()["pA_rcv_win"] > baseline.effective_probabilities()["pA_rcv_win"]

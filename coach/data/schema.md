@@ -53,6 +53,8 @@ Columns:
   - rally tolerance (`avg_rally_len`, `long_rally_share`)
   - stroke profile (`backhand_rate`, `aroundhead_rate`)
   - terminal error profile (`net_error_lost_rate`, `out_error_lost_rate`)
+  - handedness and reliability scaling from `sample_players.csv` plus serve/receive trial volume
+- Weight calibration uses pre-match player-history snapshots to reduce same-match leakage when fitting influence weights.
 
 ## Limits
 - Match-level proxies are used instead of full rally logs.

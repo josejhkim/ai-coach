@@ -31,6 +31,10 @@ class _EffectiveProbabilityScales:
     receive_error_profile: float = 0.9  # Cleaner terminal error profile strongly helps receive phases.
     serve_handedness: float = 0.35  # Handedness matchup edge is intentionally weak on serve.
     receive_handedness: float = 0.55  # Handedness matchup edge is still modest on receive.
+    serve_backhand: float = 0.25  # Lower backhand reliance is only a mild serve-phase indicator.
+    receive_backhand: float = 0.45  # Backhand reliance is more visible in longer receive-side rallies.
+    serve_aroundhead: float = 0.25  # Around-the-head usage is a mild own-serve signal.
+    receive_aroundhead: float = 0.5  # Around-the-head usage matters more in neutral/receive phases.
 
 
 _EFFECTIVE_PROBABILITY_SCALES = _EffectiveProbabilityScales()
@@ -78,6 +82,8 @@ class InfluenceWeights(BaseModel):
     w_rally_tolerance: float = Field(default=0.02, ge=0.0, le=0.08)
     w_error_profile: float = Field(default=0.03, ge=0.0, le=0.08)
     w_handedness: float = Field(default=0.01, ge=0.0, le=0.08)
+    w_backhand: float = Field(default=0.01, ge=0.0, le=0.08)
+    w_aroundhead: float = Field(default=0.01, ge=0.0, le=0.08)
 
 
 class PlayerParams(BaseModel):
@@ -161,6 +167,8 @@ class MatchupParams(BaseModel):
                 0.5 * ((b.net_error_rate - a.net_error_rate) + (b.out_error_rate - a.out_error_rate))
             ),
             "handedness_edge": handedness_edge,
+            "backhand_edge": b.backhand_rate - a.backhand_rate,
+            "aroundhead_edge": a.aroundhead_rate - b.aroundhead_rate,
         }
 
     def _new_feature_reliability_scale(self) -> float:
@@ -187,6 +195,8 @@ class MatchupParams(BaseModel):
                 + scales.serve_rally_tolerance * self.weights.w_rally_tolerance * edges["rally_tolerance_edge"]
                 + scales.serve_error_profile * self.weights.w_error_profile * edges["error_profile_edge"]
                 + scales.serve_handedness * self.weights.w_handedness * edges["handedness_edge"]
+                + scales.serve_backhand * self.weights.w_backhand * edges["backhand_edge"]
+                + scales.serve_aroundhead * self.weights.w_aroundhead * edges["aroundhead_edge"]
             )
         )
         receive_style_delta = (
@@ -205,6 +215,8 @@ class MatchupParams(BaseModel):
                 + scales.receive_rally_tolerance * self.weights.w_rally_tolerance * edges["rally_tolerance_edge"]
                 + scales.receive_error_profile * self.weights.w_error_profile * edges["error_profile_edge"]
                 + scales.receive_handedness * self.weights.w_handedness * edges["handedness_edge"]
+                + scales.receive_backhand * self.weights.w_backhand * edges["backhand_edge"]
+                + scales.receive_aroundhead * self.weights.w_aroundhead * edges["aroundhead_edge"]
             )
         )
 
@@ -343,6 +355,8 @@ class MatchupParams(BaseModel):
             "w_rally_tolerance": f"{self.weights.w_rally_tolerance:.6f}",
             "w_error_profile": f"{self.weights.w_error_profile:.6f}",
             "w_handedness": f"{self.weights.w_handedness:.6f}",
+            "w_backhand": f"{self.weights.w_backhand:.6f}",
+            "w_aroundhead": f"{self.weights.w_aroundhead:.6f}",
             "playerA_name": self.player_a.name,
             "playerB_name": self.player_b.name,
         }

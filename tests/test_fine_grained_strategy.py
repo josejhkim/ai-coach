@@ -4,7 +4,7 @@ import pandas as pd
 import pytest
 
 from coach.data.adapters.local_csv import LocalCSVAdapter
-from coach.data.stats_builder import build_matchup_params
+from coach.data.stats_builder import build_matchup_params, estimate_influence_weights
 from coach.service import BadmintonCoachService
 
 
@@ -127,3 +127,12 @@ def test_strategy_candidate_generator_has_micro_steps_and_new_knobs(tmp_path) ->
     assert any(abs(c["error_profile_delta"]) == 0.01 for c in candidates)
     assert any(abs(c["rally_tolerance_delta"]) == 0.01 for c in candidates)
     assert [c["l1_change"] for c in candidates] == sorted(c["l1_change"] for c in candidates)
+
+
+def test_estimated_weights_include_calibrated_rally_tolerance_and_stroke_terms() -> None:
+    adapter = LocalCSVAdapter()
+    weights = estimate_influence_weights(adapter)
+
+    assert 0.0 <= float(weights.w_rally_tolerance) <= 0.08
+    assert 0.0 <= float(weights.w_backhand) <= 0.08
+    assert 0.0 <= float(weights.w_aroundhead) <= 0.08

@@ -9,7 +9,16 @@
 // unforced_error_A={{unforced_error_A}}, unforced_error_B={{unforced_error_B}}
 // return_pressure_A={{return_pressure_A}}, return_pressure_B={{return_pressure_B}}
 // clutch_A={{clutch_A}}, clutch_B={{clutch_B}}
-// Weights: w_short={{w_short}}, w_attack={{w_attack}}, w_safe={{w_safe}}, w_ue={{w_ue}}, w_return_pressure={{w_return_pressure}}, w_clutch={{w_clutch}}
+// short_serve_skill_A={{short_serve_skill_A}}, short_serve_skill_B={{short_serve_skill_B}}
+// long_serve_skill_A={{long_serve_skill_A}}, long_serve_skill_B={{long_serve_skill_B}}
+// rally_tolerance_A={{rally_tolerance_A}}, rally_tolerance_B={{rally_tolerance_B}}
+// net_error_rate_A={{net_error_rate_A}}, net_error_rate_B={{net_error_rate_B}}
+// out_error_rate_A={{out_error_rate_A}}, out_error_rate_B={{out_error_rate_B}}
+// backhand_rate_A={{backhand_rate_A}}, backhand_rate_B={{backhand_rate_B}}
+// aroundhead_rate_A={{aroundhead_rate_A}}, aroundhead_rate_B={{aroundhead_rate_B}}
+// handedness_flag_A={{handedness_flag_A}}, handedness_flag_B={{handedness_flag_B}}
+// reliability_A={{reliability_A}}, reliability_B={{reliability_B}}
+// Weights: w_short={{w_short}}, w_attack={{w_attack}}, w_safe={{w_safe}}, w_ue={{w_ue}}, w_return_pressure={{w_return_pressure}}, w_clutch={{w_clutch}}, w_serve_type={{w_serve_type}}, w_rally_tolerance={{w_rally_tolerance}}, w_error_profile={{w_error_profile}}, w_handedness={{w_handedness}}, w_backhand={{w_backhand}}, w_aroundhead={{w_aroundhead}}
 
 #define TARGET {{target}};
 #define CAP {{cap}};
